@@ -319,7 +319,7 @@ class Popen(object):
 
             try:
                 hp, ht, pid, tid = CreateProcess(executable, args, None, None, 1, creationflags, env, cwd, startupinfo)
-            except pywintypes.error, e:
+            except pywintypes.error as e:
                 raise WindowsError(*e.args)
 
             self._child_created = True
