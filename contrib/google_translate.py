@@ -81,7 +81,7 @@ def _translate(text, lang):
 
     except socket.timeout:
         yield  _("Google Translate connection timed out"), ""
-    except (httplib.HTTPException, ValueError), err:
+    except (httplib.HTTPException, ValueError) as err:
         pretty.print_error(__name__, '_translate error', repr(text), lang, err)
         yield  _("Error connecting to Google Translate"), ""
 
@@ -124,7 +124,7 @@ def _load_languages():
 
     except socket.timeout:
         pretty.print_error(__name__, 'Timed out when loading languages')
-    except (httplib.HTTPException, ValueError, socket.error), err:
+    except (httplib.HTTPException, ValueError, socket.error) as err:
         pretty.print_error(__name__, '_load_languages error', type(err), err)
 
     finally:

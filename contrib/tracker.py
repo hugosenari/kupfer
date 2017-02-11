@@ -86,7 +86,7 @@ class TrackerQuerySource (Source):
         try:
             tobj = bus.get_object(SERVICE_NAME, SEARCH_OBJECT_PATH)
             searchobj = dbus.Interface(tobj, SEARCH_INTERFACE)
-        except dbus.DBusException, exc:
+        except dbus.DBusException as exc:
             pretty.print_error(__name__, exc)
             pretty.print_error(__name__, "Could not connect to Tracker")
             return
@@ -97,7 +97,7 @@ class TrackerQuerySource (Source):
         # Returns array of strings for results
         try:
             file_hits = searchobj.Text(1, "Files", self.query, 0, self.max_items)
-        except dbus.DBusException, exc:
+        except dbus.DBusException as exc:
             pretty.print_error(__name__, exc)
             return
 
