@@ -2333,7 +2333,9 @@ class WindowController (pretty.OutputMixin):
         # do some additional math to make sure that
         # that window won't close if the mouse pointer
         # is over it.
-        _gdkwindow, x, y, mods = window.get_screen().get_root_window().get_pointer()
+        seat = window.get_display().get_default_seat()
+        device = seat.get_pointer()
+        screen, x, y = device.get_position()
         w_x, w_y = window.get_position()
         w_w, w_h = window.get_size()
         if (x not in range(w_x, w_x + w_w) or
@@ -2382,10 +2384,12 @@ class WindowController (pretty.OutputMixin):
             display = self.window.get_display()
         else:
             display = uievents.GUIEnvironmentContext.ensure_display_open(displayname)
-        screen, x, y, modifiers = display.get_pointer()
+        seat = display.get_default_seat()
+        device = seat.get_pointer()
+        screen, x, y = device.get_position()
         self._window_put_on_screen(screen)
-        monitor_nr = screen.get_monitor_at_point(x, y)
-        geo = screen.get_monitor_geometry(monitor_nr)
+        monitor = display.get_monitor_at_point(x, y)
+        geo = monitor.get_geometry()
         wid, hei = self.window.get_size()
         midx = geo.x + geo.width / 2 - wid / 2
         midy = geo.y + geo.height / 2 - hei / 2
@@ -2400,9 +2404,12 @@ class WindowController (pretty.OutputMixin):
         if not self.window.get_realized():
             return True
         display = self.window.get_screen().get_display()
-        screen, x, y, modifiers = display.get_pointer()
-        return (screen.get_monitor_at_point(x,y) !=
-                screen.get_monitor_at_window(self.window.get_window()))
+        seat = display.get_default_seat()
+        device = seat.get_pointer()
+        screen, x, y = device.get_position()
+        monitor = display.get_monitor_at_point(x, y)
+        monitor2 = display.get_monitor_at_window(self.window.get_window())
+        return (monitor != monitor2)
 
     def activate(self, sender=None):
         self.on_present(sender, None, Gtk.get_current_event_time())
