@@ -556,6 +556,9 @@ class Search(GObject.GObject, pretty.OutputMixin):
     def set_state(self, state):
         self._child.set_state(state)
 
+    def set_state_flags(self, state, clear=True):
+        self._child.set_state_flags(state, clear)
+
     def show(self):
         self._child.show()
 
@@ -1782,12 +1785,12 @@ class Interface (GObject.GObject, pretty.OutputMixin):
     def _update_active(self):
         for panewidget in (self.action, self.search, self.third):
             if panewidget is not self.current:
-                panewidget.set_state(Gtk.StateType.NORMAL)
+                panewidget.set_state_flags(Gtk.StateFlags.NORMAL, True)
             panewidget.match_view.inject_preedit(None)
         if self._is_text_mode or self._key_repeat_active:
-            self.current.set_state(Gtk.StateType.ACTIVE)
+            self.current.set_state_flags(Gtk.StateFlags.ACTIVE, True)
         else:
-            self.current.set_state(Gtk.StateType.SELECTED)
+            self.current.set_state_flags(Gtk.StateFlags.SELECTED, True)
             self.current.match_view.inject_preedit(self.preedit)
         self._description_changed()
 
