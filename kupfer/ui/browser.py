@@ -498,7 +498,6 @@ class MatchViewOwner(pretty.OutputMixin):
             preedit.grab_focus()
         else:
             self.label.set_width_chars(self.label_char_width)
-            self.label.set_alignment(.5,.5)
 
 class Search(GObject.GObject, pretty.OutputMixin):
     """
