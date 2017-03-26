@@ -332,13 +332,10 @@ class MatchViewOwner(pretty.OutputMixin):
         self.icon_view = Gtk.Image()
 
         # infobox: icon and match name
-        icon_align = Gtk.Alignment.new(0.5, 0.5, 0, 0)
-        icon_align.set_property("top-padding", 5)
-        icon_align.add(self.icon_view)
         infobox = Gtk.HBox()
-        infobox.pack_start(icon_align, True, True, 0)
+        infobox.pack_start(self.icon_view, True, True, 0)
         box = Gtk.VBox()
-        box.pack_start(infobox, True, False, 0)
+        box.pack_start(infobox, True, False, 5)
         self._editbox = Gtk.HBox()
         self._editbox.pack_start(self.label, True, True, 0)
         box.pack_start(self._editbox, False, False, 3)
