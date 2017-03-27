@@ -2155,31 +2155,33 @@ class WindowController (pretty.OutputMixin):
                     self.put_away()
                 return True
 
-            mitem = None
-            if label and not icon:
-                mitem = Gtk.MenuItem(label=label)
-            else:
-                mitem = Gtk.ImageMenuItem.new_from_stock(icon)
+
+            hbox = Gtk.HBox()
+            mitem = Gtk.MenuItem()
+            mlabel = Gtk.Label(label=label)
+            sicon = Gtk.Image.new_from_icon_name(icon, Gtk.ImageType.STOCK)
+            hbox.set_homogeneous(False)
+            hbox.pack_start(sicon, False, False, 0)
+            hbox.pack_start(mlabel, False, False, 5)
+            mitem.add(hbox)
             mitem.connect("activate", mitem_handler, callback)
             menu.append(mitem)
 
         if context_menu:
-            add_menu_item(Gtk.STOCK_CLOSE, self.put_away, with_ctx=False)
+            add_menu_item(Gtk.STOCK_CLOSE, self.put_away, _("Close"), with_ctx=False)
         else:
-            add_menu_item(None, self.activate, _("Show Main Interface"))
+            add_menu_item(Gtk.STOCK_INDEX, self.activate, _("Show Main Interface"))
         menu.append(Gtk.SeparatorMenuItem())
         if context_menu:
             for name, func in self.interface.get_context_actions():
-                mitem = Gtk.MenuItem(label=name)
-                mitem.connect("activate", submenu_callback, func)
-                menu.append(mitem)
+                add_menu_item(Gtk.STOCK_INDEX, func, name)
             menu.append(Gtk.SeparatorMenuItem())
 
-        add_menu_item(Gtk.STOCK_PREFERENCES, kupferui.show_preferences)
-        add_menu_item(Gtk.STOCK_HELP, kupferui.show_help)
-        add_menu_item(Gtk.STOCK_ABOUT, kupferui.show_about_dialog)
+        add_menu_item(Gtk.STOCK_PREFERENCES, kupferui.show_preferences, _("Preferences"))
+        add_menu_item(Gtk.STOCK_HELP, kupferui.show_help, _("Help"))
+        add_menu_item(Gtk.STOCK_ABOUT, kupferui.show_about_dialog, _("About"))
         menu.append(Gtk.SeparatorMenuItem())
-        add_menu_item(Gtk.STOCK_QUIT, self.quit, with_ctx=False)
+        add_menu_item(Gtk.STOCK_QUIT, self.quit, _("Quit"), with_ctx=False)
         menu.show_all()
 
         return menu
