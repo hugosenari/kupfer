@@ -516,7 +516,7 @@ class PreferencesWindowController (pretty.OutputMixin):
             etype, error, tb = exc_info
             # TRANS: Error message when Plugin needs a Python module to load
             import_error_localized = _("Python module '%s' is needed") % "\\1"
-            import_error_pat = "No module named ([^\s]+)"
+            import_error_pat = r"No module named (\S+)"
             errmsg = str(error)
             if re.match(import_error_pat, errmsg):
                 errstr = re.sub(import_error_pat,
