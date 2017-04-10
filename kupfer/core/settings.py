@@ -1,32 +1,14 @@
 
 
-import configparser
+import json
 import copy
 import os
 import locale
+import collections
 
 from gi.repository import GLib, GObject
 
 from kupfer import config, pretty, scheduler
-
-
-def strbool(value, default=False):
-    """Coerce bool from string value or bool"""
-    if value in (True, False):
-        return value
-    value = str(value).lower()
-    if value in ("no", "false"):
-        return False
-    if value in ("yes", "true"):
-        return True
-    return default
-
-def strint(value, default=0):
-    """Coerce bool from string value or bool"""
-    try:
-        return int(value)
-    except ValueError:
-        return default
 
 def _override_encoding(name):
     """
@@ -39,18 +21,28 @@ def _override_encoding(name):
     else:
         return None
 
+
+def _same_type(value):
+    return value
+
+def _merge(old, new):
+    for key, val in new.items():
+        if isinstance(val, collections.Mapping):
+            val = _merge(old.get(key, {}), val)
+        old[key] = val
+    return old
+
+
 class SettingsController (GObject.GObject, pretty.OutputMixin):
     __gtype_name__ = "SettingsController"
-    config_filename = "kupfer.cfg"
-    defaults_filename = "defaults.cfg"
+    config_filename = "kupfer.json"
+    defaults_filename = "defaults.json"
     sep = ";"
     default_directories = ("~/", "~/Desktop", )
     # Minimal "defaults" to define all fields
     # Read defaults defined in a defaults.cfg file
     defaults = {
         "Kupfer": {
-            "keybinding" : "" ,
-            "magickeybinding": "",
             "showstatusicon" : True,
             "showstatusicon_ai" : False,
             "usecommandkeys" : True,
@@ -84,22 +76,8 @@ class SettingsController (GObject.GObject, pretty.OutputMixin):
         default -> then config
         (in all XDG_CONFIG_DIRS)
         """
-        parser = configparser.ConfigParser()
-
-        def fill_parser(parser, defaults):
-            for secname, section in defaults.items():
-                if not parser.has_section(secname):
-                    parser.add_section(secname)
-                for key, default in section.items():
-                    if isinstance(default, (tuple, list)):
-                        default = self.sep.join(default)
-                    elif isinstance(default, int):
-                        default = str(default)
-                    parser.set(secname, key, default)
-
         # Set up defaults
         confmap = copy.deepcopy(self.defaults)
-        fill_parser(parser, confmap)
 
         # Read all config files
         config_files = []
@@ -118,32 +96,12 @@ class SettingsController (GObject.GObject, pretty.OutputMixin):
 
         for config_file in config_files:
             try:
-                parser.read(config_file, encoding=self.encoding)
+                with open(config_file, encoding=self.encoding) as fp:
+                    _merge(confmap, json.load(fp, encoding=self.encoding))
             except IOError as e:
                 self.output_error(("Error reading configuration file %s: %s" % (config_file, e)))
             except UnicodeDecodeError as e:
                 self.output_error(("Error reading configuration file %s: %s" % (config_file, e)))
-
-        # Read parsed file into the dictionary again
-        for secname in parser.sections():
-            if secname not in confmap: confmap[secname] = {}
-            for key in parser.options(secname):
-                value = parser.get(secname, key)
-                retval = value
-                if secname in self.defaults and key in self.defaults[secname]:
-                    defval = self.defaults[secname][key]
-                    if isinstance(defval, (tuple, list)):
-                        if not value:
-                            retval = ()
-                        else:
-                            retval = [p.strip() for p in value.split(self.sep) if p]
-                    elif isinstance(defval, bool):
-                        retval = strbool(value)
-                    elif isinstance(defval, int):
-                        retval = type(defval)(value)
-                    else:
-                        retval = str(value)
-                confmap[secname][key] = retval
 
         return confmap
 
@@ -174,26 +132,11 @@ class SettingsController (GObject.GObject, pretty.OutputMixin):
                     del difference[secname]
             return difference
 
-        parser = configparser.ConfigParser()
-        def fill_parser(parser, defaults):
-            for secname in sorted(defaults):
-                section = defaults[secname]
-                if not parser.has_section(secname):
-                    parser.add_section(secname)
-                for key in sorted(section):
-                    value = section[key]
-                    if isinstance(value, (tuple, list)):
-                        value = self.sep.join(value)
-                    elif isinstance(value, int):
-                        value = str(value)
-                    parser.set(secname, key, value)
-
         confmap = confmap_difference(self._config, default_confmap)
-        fill_parser(parser, confmap)
         ## Write to tmp then rename over for it to be atomic
         temp_config_path = "%s.%s" % (config_path, os.getpid())
         with open(temp_config_path, "w") as out:
-            parser.write(out)
+            json.dump(confmap, out, sort_keys=True, indent=4)
         os.rename(temp_config_path, config_path)
 
     def get_config(self, section, key):
@@ -210,7 +153,7 @@ class SettingsController (GObject.GObject, pretty.OutputMixin):
         key = key.lower()
         oldvalue = self._config[section].get(key)
         if section in self.defaults:
-            value_type = type(oldvalue) if oldvalue is not None else str
+            value_type = type(oldvalue) if oldvalue is not None else _same_type
             self._config[section][key] = value_type(value)
             self._emit_value_changed(section, key, value)
             self._update_config_save_timer()
@@ -233,7 +176,7 @@ class SettingsController (GObject.GObject, pretty.OutputMixin):
         key = key.lower()
         if section not in self._config:
             self._config[section] = {}
-        self._config[section][key] = str(value)
+        self._config[section][key] = value
         self._update_config_save_timer()
         return False
 
@@ -243,38 +186,29 @@ class SettingsController (GObject.GObject, pretty.OutputMixin):
         if self._defaults_path is None:
             self.output_error('Defaults not found')
             return
-        parser = configparser.ConfigParser()
-        parser.read(self._defaults_path)
+        default_value = {}
+        with open(self._defaults_path) as fp:
+            _merge(default_value, json.load(fp))
         if option is None:
-            return parser.items(section)
+            return default_value.get(section, {})
         else:
-            return parser.get(section, option.lower())
-
-    def get_config_int(self, section, key):
-        """section must exist"""
-        key = key.lower()
-        value = self._config[section].get(key)
-        if section in self.defaults:
-            return strint(value)
-        raise KeyError("Invalid settings section: %s" % section)
-
+            return default_value.get(section, {}).get(option.lower(), None)
 
     def get_plugin_enabled(self, plugin_id):
         """Convenience: if @plugin_id is enabled"""
         return self.get_plugin_config(plugin_id, "kupfer_enabled",
-                value_type=strbool, default=False)
+                default=False)
 
     def set_plugin_enabled(self, plugin_id, enabled):
         """Convenience: set if @plugin_id is enabled"""
-        ret = self.set_plugin_config(plugin_id, "kupfer_enabled", enabled,
-                value_type=strbool)
+        ret = self.set_plugin_config(plugin_id, "kupfer_enabled", enabled)
         self.emit("plugin-enabled-changed", plugin_id, enabled)
         return ret
 
     def get_plugin_is_hidden(self, plugin_id):
         """Convenience: if @plugin_id is hidden"""
         return self.get_plugin_config(plugin_id, "kupfer_hidden",
-                value_type=strbool, default=False)
+                default=False)
 
     @classmethod
     def _source_config_repr(self, obj):
@@ -284,14 +218,12 @@ class SettingsController (GObject.GObject, pretty.OutputMixin):
     def get_source_is_toplevel(self, plugin_id, src):
         key = "kupfer_toplevel_" + self._source_config_repr(src)
         default = not getattr(src, "source_prefer_sublevel", False)
-        return self.get_plugin_config(plugin_id, key,
-                                      value_type=strbool, default=default)
+        return self.get_plugin_config(plugin_id, key, default=default)
 
     def set_source_is_toplevel(self, plugin_id, src, value):
         key = "kupfer_toplevel_" + self._source_config_repr(src)
         self.emit("plugin-toplevel-changed", plugin_id, value)
-        return self.set_plugin_config(plugin_id, key,
-                                      value, value_type=strbool)
+        return self.set_plugin_config(plugin_id, key, value)
 
     def get_keybinding(self):
         """Convenience: Kupfer keybinding as string"""
@@ -349,7 +281,7 @@ class SettingsController (GObject.GObject, pretty.OutputMixin):
         """Convenience: Show icon in notification area as bool
         (GTK)
         """
-        return strbool(self.get_config("Kupfer", "showstatusicon"))
+        return self.get_config("Kupfer", "showstatusicon")
 
     def set_show_status_icon(self, enabled):
         """Set config value and return success"""
@@ -359,7 +291,7 @@ class SettingsController (GObject.GObject, pretty.OutputMixin):
         """Convenience: Show icon in notification area as bool
         (AppIndicator3)
         """
-        return strbool(self.get_config("Kupfer", "showstatusicon_ai"))
+        return self.get_config("Kupfer", "showstatusicon_ai")
 
     def set_show_status_icon_ai(self, enabled):
         """Set config value and return success"""
@@ -385,7 +317,7 @@ class SettingsController (GObject.GObject, pretty.OutputMixin):
     def set_directories(self, dirs):
         return self._set_config("Directories", "direct", dirs)
 
-    def get_plugin_config(self, plugin, key, value_type=str, default=None):
+    def get_plugin_config(self, plugin, key, value_type=_same_type, default=None):
         """Return setting @key for plugin names @plugin, try
         to coerce to type @value_type.
         Else return @default if does not exist, or can't be coerced
@@ -403,9 +335,6 @@ class SettingsController (GObject.GObject, pretty.OutputMixin):
             val_obj.load(plugin, key, val)
             return val_obj
         else:
-            if value_type is bool:
-                value_type = strbool
-
             try:
                 val = value_type(val)
             except ValueError as err:
@@ -414,7 +343,7 @@ class SettingsController (GObject.GObject, pretty.OutputMixin):
                 return default
             return val
 
-    def set_plugin_config(self, plugin, key, value, value_type=str):
+    def set_plugin_config(self, plugin, key, value, value_type=_same_type):
         """Try set @key for plugin names @plugin, coerce to @value_type
         first.  """
         plug_section = "plugin_%s" % plugin

@@ -118,8 +118,8 @@ class PreferencesWindowController (pretty.OutputMixin):
         checkautostart.set_active(self._get_should_autostart())
         checkstatusicon_gtk.set_active(setctl.get_show_status_icon())
 
-        large_icon_size = setctl.get_config_int("Appearance", "icon_large_size")
-        small_icon_size = setctl.get_config_int("Appearance", "icon_small_size")
+        large_icon_size = setctl.get_config("Appearance", "icon_large_size")
+        small_icon_size = setctl.get_config("Appearance", "icon_small_size")
 
         set_combobox(large_icon_size, combo_icons_large_size)
         set_combobox(small_icon_size, combo_icons_small_size)
@@ -567,7 +567,7 @@ class PreferencesWindowController (pretty.OutputMixin):
         vbox = Gtk.VBox()
         vbox.set_property("spacing", 5)
         setctl = settings.GetSettingsController()
-        small_icon_size = setctl.get_config_int("Appearance", "icon_small_size")
+        small_icon_size = setctl.get_config("Appearance", "icon_small_size")
 
         def make_objects_frame(objs, title):
             frame_label = Gtk.Label()

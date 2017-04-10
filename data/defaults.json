@@ -1,0 +1,72 @@
+{
+    "kupfer": {
+        "Keybinding": "<Ctrl>space",
+        "ShowStatusIcon": true,
+        "UseCommandKeys": true,
+        "action_accelerator_modifer": "ctrl"
+    },
+    "Keybindings": {
+        "activate": "<Alt>a",
+        "comma_trick": "<Control>comma",
+        "compose_action": "<Control>Return",
+        "reset_all": "<Control>r",
+        "select_quit": "<Control>q",
+        "select_selected_text": "<Control>g",
+        "show_help": "F1",
+        "show_preferences": "<Control>semicolon",
+        "toggle_text_mode_quick": "<Control>period"
+    },
+    "Tools": {
+        "terminal": "kupfer.plugin.core.gnome-terminal",
+        "icon_renderer": "kupfer.plugin.core.gtk"
+    },
+    "plugin_core": {
+        "kupfer_enabled": true,
+        "kupfer_hidden": true
+    },
+    "plugin_applications": {
+        "kupfer_enabled": true
+    },
+    "plugin_archivemanager": {
+        "kupfer_enabled": true
+    },
+    "plugin_calculator": {
+        "kupfer_enabled": true
+    },
+    "plugin_clipboard": {
+        "kupfer_enabled": true
+    },
+    "plugin_commands": {
+        "kupfer_enabled": true
+    },
+    "plugin_dictionary": {
+        "kupfer_enabled": true
+    },
+    "plugin_documents": {
+        "kupfer_enabled": true
+    },
+    "plugin_favorites": {
+        "kupfer_enabled": true
+    },
+    "plugin_qsicons": {
+        "kupfer_enabled": true
+    },
+    "plugin_show_text": {
+        "kupfer_enabled": true
+    },
+    "plugin_triggers": {
+        "kupfer_enabled": true
+    },
+    "plugin_trash": {
+        "kupfer_enabled": true
+    },
+    "plugin_urlactions": {
+        "kupfer_enabled": true
+    },
+    "plugin_volumes": {
+        "kupfer_enabled": true
+    },
+    "plugin_wikipedia": {
+        "kupfer_enabled": true
+    }
+}

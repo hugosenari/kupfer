@@ -312,7 +312,7 @@ class MatchViewOwner(pretty.OutputMixin):
         return self._icon_size
 
     def _icon_size_changed(self, setctl, section, key, value):
-        self._icon_size = setctl.get_config_int("Appearance", "icon_large_size")
+        self._icon_size = setctl.get_config("Appearance", "icon_large_size")
 
     def _read_icon_size(self, *args):
         setctl = settings.GetSettingsController()
@@ -576,8 +576,8 @@ class Search(GObject.GObject, pretty.OutputMixin):
         return self._icon_size
 
     def _icon_size_changed(self, setctl, section, key, value):
-        self._icon_size = setctl.get_config_int("Appearance", "icon_large_size")
-        self._icon_size_small = setctl.get_config_int("Appearance", "icon_small_size")
+        self._icon_size = setctl.get_config("Appearance", "icon_large_size")
+        self._icon_size_small = setctl.get_config("Appearance", "icon_small_size")
         self.model.icon_size = self._icon_size_small
 
     def _read_icon_size(self, *args):
@@ -650,7 +650,7 @@ class Search(GObject.GObject, pretty.OutputMixin):
 
     def _show_table(self):
         setctl = settings.GetSettingsController()
-        list_maxheight = setctl.get_config_int("Appearance", "list_height")
+        list_maxheight = setctl.get_config("Appearance", "list_height")
         if list_maxheight < self._icon_size_small * self.LIST_MIN_MULT:
             list_maxheight = self.LIST_MIN_MULT * self._icon_size_small
 
@@ -967,7 +967,7 @@ class ActionSearch (Search):
         elif value == "ctrl":
             self.accel_modifier = Gdk.ModifierType.CONTROL_MASK
         else:
-            self.print_error("Unknown modifier key", value)
+            pretty.print_error(__name__, "Unknown modifier key '%s'" % value)
 
     def get_aux_info(self, obj):
         if not self.action_accel_config:
