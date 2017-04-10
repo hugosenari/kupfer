@@ -22,7 +22,7 @@ def _override_encoding(name):
         return None
 
 
-def _same_type(value):
+def _same_val(value):
     return value
 
 def _merge(old, new):
@@ -153,7 +153,7 @@ class SettingsController (GObject.GObject, pretty.OutputMixin):
         key = key.lower()
         oldvalue = self._config[section].get(key)
         if section in self.defaults:
-            value_type = type(oldvalue) if oldvalue is not None else _same_type
+            value_type = type(oldvalue) if oldvalue is not None else _same_val
             self._config[section][key] = value_type(value)
             self._emit_value_changed(section, key, value)
             self._update_config_save_timer()
@@ -317,7 +317,7 @@ class SettingsController (GObject.GObject, pretty.OutputMixin):
     def set_directories(self, dirs):
         return self._set_config("Directories", "direct", dirs)
 
-    def get_plugin_config(self, plugin, key, value_type=_same_type, default=None):
+    def get_plugin_config(self, plugin, key, value_type=_same_val, default=None):
         """Return setting @key for plugin names @plugin, try
         to coerce to type @value_type.
         Else return @default if does not exist, or can't be coerced
@@ -343,7 +343,7 @@ class SettingsController (GObject.GObject, pretty.OutputMixin):
                 return default
             return val
 
-    def set_plugin_config(self, plugin, key, value, value_type=_same_type):
+    def set_plugin_config(self, plugin, key, value, value_type=_same_val):
         """Try set @key for plugin names @plugin, coerce to @value_type
         first.  """
         plug_section = "plugin_%s" % plugin
