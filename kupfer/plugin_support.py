@@ -67,12 +67,12 @@ class PluginSettings (GObject.GObject, pretty.OutputMixin):
         setctl = settings.GetSettingsController()
         for key in self:
             value_type = self.setting_descriptions[key]["type"]
-            value = setctl.get_plugin_config(plugin_name, key, value_type)
+            value = setctl.get_plugin_config(plugin_name, key, value_type())
             if value is not None:
                 self[key] = value
             elif _is_core_setting(key):
                 default = self.setting_descriptions[key]["value"]
-                setctl.set_plugin_config(plugin_name, key, default, value_type)
+                setctl.set_plugin_config(plugin_name, key, default)
         setctl.connect("value-changed", self._value_changed, plugin_name)
         # register for unload notification
         if not plugin_name.startswith("core."):

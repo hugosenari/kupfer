@@ -21,10 +21,6 @@ def _override_encoding(name):
     else:
         return None
 
-
-def _same_val(value):
-    return value
-
 def _merge(old, new):
     for key, val in new.items():
         if isinstance(val, collections.Mapping):
@@ -151,10 +147,8 @@ class SettingsController (GObject.GObject, pretty.OutputMixin):
         """General interface, but section must exist"""
         self.output_debug("Set", section, key, "to", value)
         key = key.lower()
-        oldvalue = self._config[section].get(key)
         if section in self.defaults:
-            value_type = type(oldvalue) if oldvalue is not None else _same_val
-            self._config[section][key] = value_type(value)
+            self._config[section][key] = value
             self._emit_value_changed(section, key, value)
             self._update_config_save_timer()
             return True
@@ -317,7 +311,7 @@ class SettingsController (GObject.GObject, pretty.OutputMixin):
     def set_directories(self, dirs):
         return self._set_config("Directories", "direct", dirs)
 
-    def get_plugin_config(self, plugin, key, value_type=_same_val, default=None):
+    def get_plugin_config(self, plugin, key, default=None):
         """Return setting @key for plugin names @plugin, try
         to coerce to type @value_type.
         Else return @default if does not exist, or can't be coerced
@@ -330,30 +324,20 @@ class SettingsController (GObject.GObject, pretty.OutputMixin):
         if val is None:
             return default
 
-        if hasattr(value_type, "load"):
-            val_obj = value_type()
-            val_obj.load(plugin, key, val)
-            return val_obj
+        if hasattr(default, "load"):
+            default.load(plugin, key, val)
+            return default
         else:
-            try:
-                val = value_type(val)
-            except ValueError as err:
-                self.output_info("Error for stored value %s.%s" %
-                        (plug_section, key), err)
-                return default
             return val
 
-    def set_plugin_config(self, plugin, key, value, value_type=_same_val):
+    def set_plugin_config(self, plugin, key, value):
         """Try set @key for plugin names @plugin, coerce to @value_type
         first.  """
         plug_section = "plugin_%s" % plugin
         self._emit_value_changed(plug_section, key, value)
-
-        if hasattr(value_type, "save"):
-            value_repr = value.save(plugin, key)
-        else:
-            value_repr = value_type(value)
-        return self._set_raw_config(plug_section, key, value_repr)
+        if hasattr(value, "save"):
+            value = value.save(plugin, key)
+        return self._set_raw_config(plug_section, key, value)
 
     def get_accelerator(self, name):
         return self.get_config("Keybindings", name)
