@@ -1,5 +1,3 @@
-
-
 import json
 import copy
 import os
@@ -433,19 +431,3 @@ def GetSettingsController():
     if _settings_controller is None:
         _settings_controller = SettingsController()
     return _settings_controller
-
-
-
-class ExtendedSetting(object):
-    """ Abstract class for defining non-simple configuration option """
-    def load(self, plugin_id, key, config_value):
-        ''' load value for @plugin_id and @key, @config_value is value
-        stored in regular Kupfer config for plugin/key'''
-        pass
-
-    def save(self, plugin_id, key):
-        ''' Save value for @plugin_id and @key.
-        @Return value that should be stored in Kupfer config for
-        plugin/key (string)'''
-        return None
-

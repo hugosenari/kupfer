@@ -146,6 +146,9 @@ def check_dbus_connection():
         raise ImportError(_("No D-Bus connection to desktop session"))
 
 class UserNamePassword (object):
+    """
+    Deprecated, keep it for compatibility 
+    """
     pass
 
 def check_keyring_support():
