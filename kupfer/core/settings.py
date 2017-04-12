@@ -2,7 +2,8 @@ import json
 import copy
 import os
 import locale
-import collections
+
+from collections import Mapping
 
 from gi.repository import GLib, GObject
 
@@ -19,12 +20,32 @@ def _override_encoding(name):
     else:
         return None
 
-def _merge(old, new):
+
+def _is_map(val, vval):
+    return isinstance(vval, Mapping) and isinstance(val, Mapping)
+    
+
+
+def _dict_union(updated, update):
+    for key, val in update.items():
+        old_val = updated.get(key, None)
+        if _is_map(val, old_val):
+            val = _dict_union(old_val, val)
+        updated[key] = val
+    return updated
+
+
+def _dict_difference(new, old):
+    difference = {}
     for key, val in new.items():
-        if isinstance(val, collections.Mapping):
-            val = _merge(old.get(key, {}), val)
-        old[key] = val
-    return old
+        old_val = old.get(key, None)
+        if not old_val:
+            difference[key] = val
+        elif val != old[key]:
+            if _is_map(val, old_val):
+                val = _dict_difference(val, old_val)
+            difference[key] = val
+    return difference
 
 
 class SettingsController (GObject.GObject, pretty.OutputMixin):
@@ -91,7 +112,7 @@ class SettingsController (GObject.GObject, pretty.OutputMixin):
         for config_file in config_files:
             try:
                 with open(config_file, encoding=self.encoding) as fp:
-                    _merge(confmap, json.load(fp, encoding=self.encoding))
+                    _dict_union(confmap, json.load(fp, encoding=self.encoding))
             except IOError as e:
                 self.output_error(("Error reading configuration file %s: %s" % (config_file, e)))
             except UnicodeDecodeError as e:
@@ -108,25 +129,7 @@ class SettingsController (GObject.GObject, pretty.OutputMixin):
         # read in just the default values
         default_confmap = self._read_config(read_config=False)
 
-        def confmap_difference(config, defaults):
-            """Extract the non-default keys to write out"""
-            difference = dict()
-            for secname, section in list(config.items()):
-                if secname not in defaults:
-                    difference[secname] = dict(section)
-                    continue
-                difference[secname] = {}
-                for key, config_val in list(section.items()):
-                    if (secname in defaults and
-                            key in defaults[secname]):
-                        if defaults[secname][key] == config_val:
-                            continue
-                    difference[secname][key] = config_val
-                if not difference[secname]:
-                    del difference[secname]
-            return difference
-
-        confmap = confmap_difference(self._config, default_confmap)
+        confmap = _dict_difference(self._config, default_confmap)
         ## Write to tmp then rename over for it to be atomic
         temp_config_path = "%s.%s" % (config_path, os.getpid())
         with open(temp_config_path, "w") as out:
@@ -180,7 +183,7 @@ class SettingsController (GObject.GObject, pretty.OutputMixin):
             return
         default_value = {}
         with open(self._defaults_path) as fp:
-            _merge(default_value, json.load(fp))
+            _dict_union(default_value, json.load(fp))
         if option is None:
             return default_value.get(section, {})
         else:
